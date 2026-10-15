@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Word Meaning Scouter - Pre-reading Vocabulary Extraction</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2.0.6/css/pico.min.css" integrity="sha384-7P0NVe9LPDbUCAF+fH2R8Egwz1uqNH83Ns/bfJY0fN2XCDBMUI2S9gGzIOIRBKsA" crossorigin="anonymous">
+    <link rel="stylesheet" href="./css/base.css?v=2">
+    <link rel="stylesheet" href="./css/reader.css?v=2">
+    <link rel="stylesheet" href="./css/vocab.css?v=2">
+    <link rel="stylesheet" href="./css/print.css?v=2">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.1.5/jszip.min.js" integrity="sha384-6M0rZuK8mRhdpnt5f7OV2x+2kGHdPMTeq8E4qSbS5S4Ohq+Mcq1ZmSWQV3FdawvW" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/epubjs@0.3.93/dist/epub.min.js" integrity="sha384-ZqmkDa/1AGF4SKdSmXgEG+3G+Gsb6yNqUSq2Mqp0jDf1GWk+UY5eNbEd7hgwiywI" crossorigin="anonymous"></script>
+</head>
+
+<body>
+    <main class="container">
+        <!-- Initial Start View -->
+        <div id="start-view" class="start-view">
+            <h1 class="serif-title brand-title-large">Word Meaning Scouter</h1>
+            <p class="muted">Improve reading comprehension.</p>
+
+            <div class="upload-action-group">
+                <label for="start-file-input" role="button" class="contrast">Upload EPUB</label>
+                <input type="file" id="start-file-input" accept=".epub" hidden>
+                <small class="upload-privacy-note muted">This app does not save or store anything you upload.</small>
+            </div>
+        </div>
+
+        <!-- Main Workspace (Hidden initially) -->
+        <div id="main-workspace" class="hidden">
+            <header class="workspace-header">
+                <div>
+                    <h1 class="serif-title brand-title">Word Meaning Scouter</h1>
+                    <small id="book-title" class="muted"></small>
+                </div>
+                <div>
+                    <label for="change-file-input" role="button" class="secondary outline btn-sm">Change EPUB</label>
+                    <input type="file" id="change-file-input" accept=".epub" hidden>
+                </div>
+            </header>
+
+            <!-- Top Half: EPUB Preview -->
+            <article class="preview-card">
+                <div class="reader-container">
+                    <div id="viewer" class="viewer"></div>
+                </div>
+                <footer class="preview-footer">
+                    <button id="prev-btn" class="secondary outline btn-sm" disabled aria-label="Previous Page">&larr;
+                        Prev</button>
+                    <small id="page-info" class="muted"></small>
+                    <button id="next-btn" class="secondary outline btn-sm" disabled aria-label="Next Page">Next
+                        &rarr;</button>
+                </footer>
+            </article>
+
+            <!-- Bottom Half: Controls -->
+            <article class="controls-card">
+                <div class="grid">
+                    <div>
+                        <label class="radio-label">
+                            <input type="radio" name="selection-mode" value="chapter" checked>
+                            Chapter
+                        </label>
+                        <select id="toc-select" disabled>
+                            <option value="">Select Chapter</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="radio-label">
+                            <input type="radio" name="selection-mode" value="page-range">
+                            Page Range
+                        </label>
+                        <div class="range-row">
+                            <input type="number" id="page-start" placeholder="Start" min="1" disabled>
+                            <span class="range-sep">to</span>
+                            <input type="number" id="page-end" placeholder="End" min="1" disabled>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label for="word-count">Words</label>
+                        <select id="word-count">
+                            <option value="4">4 words</option>
+                            <option value="8">8 words</option>
+                            <option value="16" selected>16 words</option>
+                            <option value="32">32 words</option>
+                        </select>
+                    </div>
+
+                    <div class="extract-col">
+                        <label class="checkbox-toggle-label">
+                            <input type="checkbox" id="include-crux" checked>
+                            Crux Paragraph
+                        </label>
+                        <button id="extract-btn" class="contrast" disabled>Extract</button>
+                    </div>
+                </div>
+                <small class="ai-disclaimer-note muted">Note: AI can make mistakes.</small>
+            </article>
+
+            <!-- Extracted Vocabulary Section -->
+            <article id="vocab-section" class="hidden">
+                <header class="vocab-header-row">
+                    <div>
+                        <h3 class="vocab-title">Extracted Vocabulary</h3>
+                        <small id="vocab-subtitle" class="muted"></small>
+                    </div>
+                    <button id="print-sheet-btn" class="secondary outline btn-sm" disabled>Get Printable Sheet</button>
+                </header>
+
+                <div id="vocab-loading" class="vocab-status hidden" aria-busy="true">
+                    Analyzing vocabulary with Gemini...
+                </div>
+
+                <div id="vocab-error" class="vocab-status error-text hidden"></div>
+
+                <div id="crux-box" class="crux-box hidden">
+                    <div class="crux-label">Crux Paragraph</div>
+                    <p id="crux-text" class="crux-text"></p>
+                </div>
+
+                <div id="vocab-grid" class="vocab-grid hidden"></div>
+            </article>
+        </div>
+
+        <!-- Word Meaning Dialog -->
+        <dialog id="word-detail-dialog">
+            <article class="word-detail-dialog-content">
+                <header class="detail-header">
+                    <div>
+                        <strong id="detail-word" class="detail-word-text"></strong>
+                        <small id="detail-pos" class="muted italic"></small>
+                        <small id="detail-pron" class="muted"></small>
+                    </div>
+                    <button id="detail-close-btn" class="secondary outline btn-sm">Close</button>
+                </header>
+                <h6>Definitions</h6>
+                <ul id="detail-definitions"></ul>
+                <h6>Example Usage</h6>
+                <blockquote id="detail-example" class="detail-example-text"></blockquote>
+            </article>
+        </dialog>
+
+        <!-- Printable Sheet Dialog -->
+        <dialog id="print-dialog">
+            <article class="print-dialog-content">
+                <header class="print-dialog-header no-print">
+                    <div>
+                        <h4 class="print-modal-title">Printable Vocabulary Flashcards</h4>
+                        <small id="print-sheet-meta" class="muted"></small>
+                    </div>
+                    <div class="print-controls-bar">
+                        <div class="print-format-group">
+                            <label class="print-format-radio">
+                                <input type="radio" name="print-format" value="single" checked> Single-Sided (Fold)
+                            </label>
+                            <label class="print-format-radio">
+                                <input type="radio" name="print-format" value="double"> Double-Sided (Duplex)
+                            </label>
+                        </div>
+                        <div class="print-actions">
+                            <button id="do-print-btn" class="contrast btn-sm">Print Sheet</button>
+                            <button id="close-print-dialog-btn" class="secondary outline btn-sm">Close</button>
+                        </div>
+                    </div>
+                </header>
+                <div id="print-sheet-body" class="print-sheet-body">
+                    <!-- Dynamic Printable Flashcards Table -->
+                </div>
+            </article>
+        </dialog>
+    </main>
+
+    <script type="module" src="./app.js"></script>
+</body>
+
+</html>

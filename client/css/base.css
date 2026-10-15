@@ -1,0 +1,204 @@
+/* Base Typography, Utilitarian Theme, Start Screen, Header & Utilities */
+:root,
+[data-theme="light"] {
+    --color-teal: #31AAA9;
+    --color-cream: #F8E0A4;
+    --color-crimson: #A82020;
+    --color-oxblood: #6C1A1A;
+    --color-paper: #FDF8EC;
+    --color-ink: #240D0D;
+
+    --font-serif: "Georgia", "Times New Roman", serif;
+    --font-mono: ui-monospace, "SFMono-Regular", Menlo, Monaco, Consolas, monospace;
+
+    --pico-border-radius: 0px;
+    --pico-box-shadow: none;
+    --pico-background-color: var(--color-paper);
+    --pico-card-background-color: #FFFFFF;
+    --pico-card-sectioning-background-color: var(--color-cream);
+    --pico-color: var(--color-ink);
+    --pico-muted-color: var(--color-oxblood);
+    --pico-border-color: var(--color-oxblood);
+    --pico-muted-border-color: var(--color-oxblood);
+    --pico-primary: var(--color-teal);
+    --pico-primary-background: var(--color-teal);
+    --pico-primary-border: var(--color-oxblood);
+    --pico-primary-hover: var(--color-oxblood);
+    --pico-primary-hover-background: var(--color-oxblood);
+    --pico-primary-hover-border: var(--color-oxblood);
+    --pico-contrast: var(--color-crimson);
+    --pico-contrast-background: var(--color-crimson);
+    --pico-contrast-border: var(--color-oxblood);
+    --pico-contrast-hover: var(--color-oxblood);
+    --pico-contrast-hover-background: var(--color-oxblood);
+    --pico-contrast-hover-border: var(--color-oxblood);
+    --pico-form-element-background-color: #FFFFFF;
+    --pico-form-element-border-color: var(--color-oxblood);
+    --pico-form-element-active-border-color: var(--color-teal);
+    --pico-form-element-focus-color: transparent;
+    --pico-del-color: var(--color-crimson);
+}
+
+html,
+body {
+    min-height: 100vh;
+    background-color: var(--color-paper) !important;
+    color: var(--color-ink);
+}
+
+/* Utilitarian Sharp Surfaces & Controls */
+article,
+dialog article,
+button,
+[role="button"],
+input,
+select,
+textarea,
+blockquote {
+    border-radius: 0 !important;
+    box-shadow: none !important;
+}
+
+article {
+    border: 2px solid var(--color-oxblood);
+    background-color: #FFFFFF;
+}
+
+input:not([type="radio"]):not([type="checkbox"]),
+select {
+    border: 1.5px solid var(--color-oxblood) !important;
+    background-color: #FFFFFF !important;
+    color: var(--color-ink) !important;
+}
+
+input:not([type="radio"]):not([type="checkbox"]):focus,
+select:focus {
+    border-color: var(--color-teal) !important;
+    outline: 2px solid var(--color-teal) !important;
+    outline-offset: 0;
+}
+
+input[type="radio"],
+input[type="checkbox"] {
+    border: 1.5px solid var(--color-oxblood) !important;
+}
+
+input[type="radio"]:checked,
+input[type="checkbox"]:checked {
+    background-color: var(--color-teal) !important;
+    border-color: var(--color-oxblood) !important;
+}
+
+button.contrast,
+[role="button"].contrast {
+    background-color: var(--color-crimson) !important;
+    border: 2px solid var(--color-oxblood) !important;
+    color: #FFFFFF !important;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+button.contrast:hover:not(:disabled),
+[role="button"].contrast:hover:not(:disabled) {
+    background-color: var(--color-oxblood) !important;
+    border-color: var(--color-oxblood) !important;
+    color: var(--color-cream) !important;
+}
+
+button.secondary.outline,
+[role="button"].secondary.outline {
+    background-color: #FFFFFF !important;
+    border: 1.5px solid var(--color-oxblood) !important;
+    color: var(--color-oxblood) !important;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+
+button.secondary.outline:hover:not(:disabled),
+[role="button"].secondary.outline:hover:not(:disabled) {
+    background-color: var(--color-teal) !important;
+    border-color: var(--color-oxblood) !important;
+    color: #FFFFFF !important;
+}
+
+.serif-title {
+    font-family: var(--font-serif);
+    letter-spacing: -0.5px;
+    color: var(--color-oxblood);
+}
+
+/* Start Screen */
+.start-view {
+    min-height: 70vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    gap: 1.5rem;
+    border: 2px solid var(--color-oxblood);
+    background-color: #FFFFFF;
+    margin-top: 2rem;
+    padding: 3rem 1.5rem;
+}
+
+.brand-title-large {
+    font-size: 3.25rem;
+    margin-bottom: 0;
+}
+
+.upload-action-group {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.65rem;
+}
+
+.upload-privacy-note {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+}
+
+/* Workspace Header */
+.workspace-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem 1rem;
+    margin-bottom: 1.25rem;
+    background-color: var(--color-cream);
+    border: 2px solid var(--color-oxblood);
+}
+
+.brand-title {
+    margin-bottom: 0;
+    font-size: 1.6rem;
+}
+
+/* Utilities */
+.btn-sm {
+    padding: 0.35rem 0.75rem;
+    font-size: 0.78rem;
+    margin: 0;
+    display: inline-block;
+    width: auto;
+}
+
+.muted {
+    color: var(--color-oxblood);
+}
+
+.italic {
+    font-style: italic;
+}
+
+.error-text {
+    color: var(--color-crimson);
+    font-weight: 600;
+}
+
+.hidden {
+    display: none !important;
+}

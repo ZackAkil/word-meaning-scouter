@@ -1,0 +1,40 @@
+# Python bytecode & caches
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+
+# Environment variables & secrets
+.env
+.env.*
+!.env.example
+*.json.key
+*credentials*.json
+
+# macOS & OS files
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+Thumbs.db
+
+# IDE & Editor directories
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Logs & local build artifacts
+*.log
+dist/
+build/
+*.egg-info/
