@@ -9,6 +9,7 @@ import { fetchVocabulary, renderCruxParagraph, renderVocabGrid, showWordDetail, 
 
 document.addEventListener('DOMContentLoaded', () => {
     checkSecurityStatus().catch((err) => console.warn('Status check failed:', err));
+    loadGitHubStars('ZackAkil/word-meaning-scouter');
 
     const state = {
         currentChapterHref: null,
@@ -296,6 +297,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
         state.currentScope = scope;
 
+        elements.extractBtn.disabled = true;
+        elements.extractBtn.setAttribute('aria-busy', 'true');
         elements.vocabSubtitle.textContent = `${scope} • ${targetCount} Words`;
         elements.vocabSection.classList.remove('hidden');
         elements.vocabLoading.classList.remove('hidden');
@@ -371,6 +374,34 @@ document.addEventListener('DOMContentLoaded', () => {
             elements.vocabError.textContent = err.message;
             elements.vocabError.classList.remove('hidden');
             if (elements.printSheetBtn) elements.printSheetBtn.disabled = true;
+        } finally {
+            elements.extractBtn.disabled = false;
+            elements.extractBtn.removeAttribute('aria-busy');
+        }
+    }
+
+    async function loadGitHubStars(repo) {
+        const starEl = document.getElementById('gh-star-count');
+        if (!starEl) return;
+
+        const cacheKey = `gh_stars_${repo}`;
+        const cached = sessionStorage.getItem(cacheKey);
+        if (cached !== null) {
+            starEl.textContent = cached;
+            return;
+        }
+
+        try {
+            const res = await fetch(`https://api.github.com/repos/${repo}`);
+            if (!res.ok) return;
+            const data = await res.json();
+            if (typeof data.stargazers_count === 'number') {
+                const formatted = data.stargazers_count.toLocaleString();
+                starEl.textContent = formatted;
+                sessionStorage.setItem(cacheKey, formatted);
+            }
+        } catch {
+            // Leave fallback "Star" label if offline or rate-limited
         }
     }
 });

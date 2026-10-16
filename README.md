@@ -74,6 +74,35 @@ flowchart LR
 
 ---
 
+## Cost & Token Economics (`gemini-3.5-flash-lite`)
+
+Based on [Google Cloud Gemini Platform pricing](https://cloud.google.com/gemini-enterprise-agent-platform/generative-ai/pricing) for **Gemini 3.5 Flash-Lite**:
+
+| Tier | Global Price (per 1M tokens) | Non-Global Price (per 1M tokens) |
+| :--- | :--- | :--- |
+| **Input** (text, image, video, audio) | **$0.30** ($0.03 cached) | $0.33 ($0.033 cached) |
+| **Text Output** (response & reasoning) | **$2.50** | — |
+
+### Example Average Cost per Request (Global Endpoint)
+
+Assuming standard English tokenization (~4 characters per token):
+
+- **Typical Chapter Extraction (15,000 chars, 16 words + Crux Paragraph):**
+  - **Input:** `15,000 chars ÷ 4` (3,750 text tokens) + 250 prompt/schema tokens = **4,000 input tokens**
+    - `4,000 × ($0.30 / 1,000,000)` = **$0.0012**
+  - **Output:** 16 structured word entries (~60 tokens each) + Crux Paragraph ≈ **1,000 output tokens**
+    - `1,000 × ($2.50 / 1,000,000)` = **$0.0025**
+  - **Average Total per Request:** `$0.0012 + $0.0025` = **$0.0037** (**0.37 cents**, or **~270 extractions per $1.00 USD**)
+
+- **Maximum Allowed Excerpt (60,000 chars, 32 words + Crux Paragraph):**
+  - **Input:** `60,000 chars ÷ 4` (15,000 text tokens) + 250 prompt/schema tokens = **15,250 input tokens**
+    - `15,250 × ($0.30 / 1,000,000)` = **$0.004575** (≈ $0.0046)
+  - **Output:** 32 structured word entries (~60 tokens each) + Crux Paragraph ≈ **2,000 output tokens**
+    - `2,000 × ($2.50 / 1,000,000)` = **$0.0050**
+  - **Max-Size Total per Request:** `$0.004575 + $0.0050` = **~$0.0096** (**< 1 cent**, or **~104 max-size extractions per $1.00 USD**)
+
+---
+
 ## Project Structure
 
 ```text

@@ -168,7 +168,7 @@ async def _security_headers_middleware(request: Request, call_next) -> Response:
         "img-src 'self' data: blob:; "
         "font-src 'self' data: blob:; "
         "frame-src 'self' blob: https://www.google.com; "
-        "connect-src 'self' blob: https://www.google.com; "
+        "connect-src 'self' blob: https://www.google.com https://api.github.com; "
         "frame-ancestors 'self';",
     )
     if DEV_MODE:

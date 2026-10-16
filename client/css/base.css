@@ -134,6 +134,63 @@ button.secondary.outline:hover:not(:disabled),
     color: var(--color-oxblood);
 }
 
+/* Top Bar & GitHub Badge */
+.top-bar {
+    display: flex;
+    justify-content: flex-end;
+    padding-top: 0.75rem;
+    margin-bottom: 0.5rem;
+}
+
+.github-badge {
+    display: inline-flex;
+    align-items: stretch;
+    border: 1.5px solid var(--color-oxblood);
+    background-color: #FFFFFF;
+    color: var(--color-oxblood);
+    text-decoration: none;
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    font-weight: 700;
+    line-height: 1;
+}
+
+.github-badge-main {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.4rem 0.65rem;
+    background-color: #FFFFFF;
+    color: var(--color-oxblood);
+}
+
+.github-badge-stars {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.4rem 0.6rem;
+    background-color: var(--color-cream);
+    color: var(--color-oxblood);
+    border-left: 1.5px solid var(--color-oxblood);
+}
+
+.github-badge:hover .github-badge-main {
+    background-color: var(--color-teal);
+    color: #FFFFFF;
+}
+
+.github-badge:hover .github-badge-stars {
+    background-color: var(--color-oxblood);
+    color: var(--color-cream);
+}
+
+.github-icon,
+.star-icon {
+    width: 14px;
+    height: 14px;
+    flex-shrink: 0;
+}
+
 /* Start Screen */
 .start-view {
     min-height: 70vh;
@@ -145,7 +202,7 @@ button.secondary.outline:hover:not(:disabled),
     gap: 1.5rem;
     border: 2px solid var(--color-oxblood);
     background-color: #FFFFFF;
-    margin-top: 2rem;
+    margin-top: 0.5rem;
     padding: 3rem 1.5rem;
 }
 
