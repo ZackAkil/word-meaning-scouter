@@ -33,5 +33,5 @@ def get_project_id() -> str:
 
 PROJECT_ID = get_project_id()
 GEMINI_LOCATION = os.getenv("GCP_LOCATION", "global")
-GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-3.8-flash")
+GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-3.5-flash-lite")
 MAX_TEXT_LENGTH = 60000

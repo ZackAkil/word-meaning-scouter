@@ -33,6 +33,24 @@ export async function extractTextFromSpineHref(book, href) {
     return extractTextFromSpineSection(book, section);
 }
 
+function sliceOnWordBoundaries(text, rawStart, rawEnd) {
+    if (!text) return '';
+    let start = Math.max(0, rawStart);
+    let end = Math.min(text.length, rawEnd);
+
+    if (start > 0 && !/\s/.test(text[start - 1]) && !/\s/.test(text[start])) {
+        const prevSpace = text.lastIndexOf(' ', start);
+        start = prevSpace !== -1 ? prevSpace + 1 : 0;
+    }
+
+    if (end < text.length && !/\s/.test(text[end - 1]) && !/\s/.test(text[end])) {
+        const nextSpace = text.indexOf(' ', end);
+        end = nextSpace !== -1 ? nextSpace : text.length;
+    }
+
+    return text.slice(start, end).trim();
+}
+
 export async function extractSelectionText({
     book,
     mode = 'chapter',
@@ -98,7 +116,7 @@ export async function extractSelectionText({
 
                 const sliceStart = Math.floor(startRatio * fullSectionText.length);
                 const sliceEnd = Math.ceil(endRatio * fullSectionText.length);
-                const sliced = fullSectionText.slice(sliceStart, sliceEnd).trim();
+                const sliced = sliceOnWordBoundaries(fullSectionText, sliceStart, sliceEnd);
 
                 if (sliced) {
                     console.log(
@@ -125,7 +143,7 @@ export async function extractSelectionText({
                 if (sectionText) allSectionsText.push(sectionText);
             }
             const fullBookText = allSectionsText.join('\n\n');
-            const slicedBookText = fullBookText.slice(startChar, endChar).trim();
+            const slicedBookText = sliceOnWordBoundaries(fullBookText, startChar, endChar);
             if (slicedBookText) return slicedBookText;
         }
     }

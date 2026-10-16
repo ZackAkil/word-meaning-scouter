@@ -27,6 +27,9 @@ DEMO_NAME="$SERVICE_NAME"
 DEV_MODE="${DEV_MODE:-false}"
 MAX_INSTANCES="${MAX_INSTANCES:-5}"
 
+echo "Building production frontend bundle..."
+"$(dirname "$0")/build_client.sh"
+
 echo "Deploying $SERVICE_NAME to Cloud Run in $PROJECT_ID..."
 
 gcloud run deploy "$SERVICE_NAME" \

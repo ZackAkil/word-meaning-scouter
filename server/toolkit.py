@@ -1,5 +1,4 @@
 import inspect
-import json
 import logging
 import os
 from functools import wraps
@@ -7,7 +6,7 @@ from pathlib import Path
 
 import redis
 from dotenv import load_dotenv
-from fastapi import FastAPI, HTTPException, Request, Response
+from fastapi import BackgroundTasks, FastAPI, HTTPException, Request, Response
 from fastapi.concurrency import run_in_threadpool
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
@@ -17,7 +16,7 @@ from slowapi.errors import RateLimitExceeded
 from server.config_utils import PROJECT_ID
 from server.fingerprint import generate_fingerprint
 from server.recaptcha_validator import RecaptchaValidator
-from server.simple_tracker import DEMO_NAME, simpletrack
+from server.simple_tracker import DEMO_NAME, current_background_tasks, simpletrack
 
 load_dotenv(override=False)
 
@@ -33,7 +32,11 @@ DEV_MODE = os.getenv("DEV_MODE", "false").lower() == "true"
 ALLOW_SIMPLE_MODE = os.getenv("ALLOW_SIMPLE_MODE", "false").lower() == "true"
 MAX_BODY_BYTES = int(os.getenv("MAX_BODY_BYTES", "131072"))
 
-DEFAULT_CLIENT_DIR = Path(__file__).resolve().parent.parent / "client"
+_ROOT_DIR = Path(__file__).resolve().parent.parent
+_DIST_CLIENT_DIR = _ROOT_DIR / "client_dist"
+DEFAULT_CLIENT_DIR = (
+    _DIST_CLIENT_DIR if (not DEV_MODE and _DIST_CLIENT_DIR.is_dir()) else (_ROOT_DIR / "client")
+)
 
 recaptcha_validator = RecaptchaValidator(
     project_id=PROJECT_ID,
@@ -142,7 +145,18 @@ async def _security_headers_middleware(request: Request, call_next) -> Response:
                 )
         request._body = bytes(chunks)
 
-    response: Response = await call_next(request)
+    bg_tasks = BackgroundTasks()
+    ctx_token = current_background_tasks.set(bg_tasks)
+    try:
+        response: Response = await call_next(request)
+    finally:
+        current_background_tasks.reset(ctx_token)
+
+    if bg_tasks.tasks:
+        if response.background is not None:
+            bg_tasks.tasks.insert(0, response.background)
+        response.background = bg_tasks
+
     response.headers.setdefault("X-Content-Type-Options", "nosniff")
     response.headers.setdefault("X-Frame-Options", "SAMEORIGIN")
     response.headers.setdefault("Referrer-Policy", "strict-origin-when-cross-origin")
@@ -206,9 +220,8 @@ def protect(event_name: str | None = None, action: str = "SUBMIT"):
     """
     Decorator for FastAPI endpoints that enforces:
     1. Global and per-user rate limits via SlowAPI
-    2. Request payload size and JSON object structure validation
-    3. Non-blocking reCAPTCHA Enterprise token verification (via threadpool)
-    4. Bounded background BigQuery telemetry (when event_name is provided)
+    2. Non-blocking reCAPTCHA Enterprise token verification via X-Recaptcha-Token header
+    3. BackgroundTask BigQuery telemetry attached to the Response (when event_name is provided)
     """
     def decorator(func):
         inner = simpletrack(event_name)(func) if event_name else func
@@ -223,20 +236,7 @@ def protect(event_name: str | None = None, action: str = "SUBMIT"):
                         break
 
             if request is not None:
-                raw_body = await request.body()
-                if len(raw_body) > MAX_BODY_BYTES:
-                    raise HTTPException(status_code=413, detail="Request payload too large")
-
-                data = {}
-                if raw_body:
-                    try:
-                        data = json.loads(raw_body)
-                    except ValueError:
-                        raise HTTPException(status_code=400, detail="Invalid JSON payload")
-                    if not isinstance(data, dict):
-                        raise HTTPException(status_code=400, detail="JSON payload must be an object")
-
-                token = data.get("recaptcha_token") or request.headers.get("X-Recaptcha-Token")
+                token = request.headers.get("X-Recaptcha-Token")
                 await run_in_threadpool(verify_recaptcha, token, action)
 
             if inspect.iscoroutinefunction(inner):

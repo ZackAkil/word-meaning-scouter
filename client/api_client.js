@@ -99,13 +99,15 @@ export async function getRecaptchaToken(siteKey, action = 'SUBMIT') {
 export async function postProtected(endpoint, payload, siteKey = '', action = 'SUBMIT') {
     const recaptchaToken = await getRecaptchaToken(siteKey, action);
 
+    const headers = { 'Content-Type': 'application/json' };
+    if (recaptchaToken) {
+        headers['X-Recaptcha-Token'] = recaptchaToken;
+    }
+
     const response = await fetch(endpoint, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-            ...payload,
-            recaptcha_token: recaptchaToken,
-        }),
+        headers,
+        body: JSON.stringify(payload),
     });
 
     const data = await response.json().catch(() => ({}));

@@ -35,6 +35,7 @@ Thumbs.db
 
 # Logs & local build artifacts
 *.log
+client_dist/
 dist/
 build/
 *.egg-info/

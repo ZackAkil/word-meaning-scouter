@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- Sharp Cream Background with Oxblood Border -->
+  <rect x="2" y="2" width="60" height="60" fill="#F8E0A4" stroke="#6C1A1A" stroke-width="4"/>
+  <!-- Top Teal Header Bar -->
+  <rect x="4" y="4" width="56" height="10" fill="#31AAA9"/>
+  <line x1="2" y1="14" x2="62" y2="14" stroke="#6C1A1A" stroke-width="3"/>
+  <!-- Crimson Bookmark Ribbon -->
+  <polygon points="46,14 54,14 54,30 50,26 46,30" fill="#A82020" stroke="#6C1A1A" stroke-width="2"/>
+  <!-- Serif "W" Monogram -->
+  <text x="29" y="50" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-size="34" font-weight="bold" fill="#6C1A1A">W</text>
+</svg>
