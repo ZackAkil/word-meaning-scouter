@@ -1,10 +1,18 @@
 #!/bin/bash
 set -u
 
-PROJECT_ID="${PROJECT_ID:-starter-apps-base}"
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+if [ -f "$ROOT_DIR/.env" ]; then
+    set -a
+    # shellcheck disable=SC1091
+    source "$ROOT_DIR/.env"
+    set +a
+fi
+
+PROJECT_ID="${PROJECT_ID:?Set PROJECT_ID in .env or environment}"
 REGION="${REGION:-us-central1}"
-DATASET_ID="${DATASET_ID:-simple_demo_tracking}"
-TABLE_ID="${TABLE_ID:-demo_usage}"
+DATASET_ID="${BQ_DATASET:-simple_demo_tracking}"
+TABLE_ID="${BQ_TABLE:-demo_usage}"
 
 FAILURES=0
 

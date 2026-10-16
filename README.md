@@ -49,12 +49,12 @@ flowchart LR
 
 ### Why Gemini platform?
 - **Right-Sized Speed & Capability (`gemini-3.5-flash-lite`):** Identifying tricky vocabulary, defining words, and synthesizing a short passage is a relatively straightforward extraction and text-generation task—`gemini-3.5-flash-lite` is more than capable of handling it accurately while delivering ultra-fast, low-cost responses for an interactive reader workflow.
-- **Native Structured Outputs:** Instead of fragile regex parsing, the backend passes a strict Pydantic schema (`VocabularyExtractionResponse`) directly to Gemini platform so the model is constrained to return valid, typed JSON every time.
-- **Keyless IAM Authentication:** Running on the Gemini platform uses Application Default Credentials (ADC)—no static LLM API keys to rotate or leak.
-- **Prompt-Injection Isolation:** Untrusted book text is isolated inside `<book_excerpt>` delimiters with system instructions that ignore embedded directives.
+- **Native Structured Outputs:** Instead of fragile regex parsing, the backend passes a strict schema (`VocabularyExtractionResponse`) directly to Gemini platform so the model is constrained to return valid, typed JSON every time.
+- **Keyless IAM Authentication:** Running on the Gemini platform uses Application Default Credentials so that there are no static LLM API keys to rotate or leak.
+- **Prompt-Injection Isolation:** Untrusted book text is isolated inside `<book_excerpt>` delimiters with system instructions that ignore embedded directives / prompt injections.
 
 ### Why Cloud Run?
-- **Scale-to-Zero Economics:** A public app shouldn't cost money when nobody is reading, yet needs to scale horizontally in seconds to meet suden demand.
+- **Scale-to-Zero Economics:** A public app shouldn't cost money when nobody is reading, yet needs to scale horizontally in seconds to meet sudden demand.
 - **Single-Artifact Simplicity:** One container serves both the FastAPI backend and the static frontend, with automatic TLS and custom domain mapping.
 - **Direct VPC Egress:** Cloud Run connects directly to private VPC resources (Memorystore) without needing a separate Serverless VPC Access connector.
 

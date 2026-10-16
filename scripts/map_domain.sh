@@ -1,10 +1,18 @@
 #!/bin/bash
 set -e
 
-PROJECT_ID="starter-apps-base"
-REGION="us-central1"
-SERVICE_NAME="word-meaning-scouter"
-DOMAIN="word-meaning-scouter.com"
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+if [ -f "$ROOT_DIR/.env" ]; then
+    set -a
+    # shellcheck disable=SC1091
+    source "$ROOT_DIR/.env"
+    set +a
+fi
+
+PROJECT_ID="${PROJECT_ID:?Set PROJECT_ID in .env or environment}"
+REGION="${REGION:-us-central1}"
+SERVICE_NAME="${SERVICE_NAME:-word-meaning-scouter}"
+DOMAIN="${DOMAIN:?Set DOMAIN in .env or environment}"
 
 echo "Mapping $DOMAIN and www.$DOMAIN to Cloud Run service '$SERVICE_NAME'..."
 

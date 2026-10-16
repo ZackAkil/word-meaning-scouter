@@ -1,39 +1,47 @@
 #!/bin/bash
 set -e
 
-# Configuration
-PROJECT_ID="starter-apps-base"
-SERVICE_NAME="word-meaning-scouter"
-REGION="us-central1"
-GCP_LOCATION="global"
-GEMINI_MODEL="gemini-3.5-flash-lite"
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+if [ -f "$ROOT_DIR/.env" ]; then
+    set -a
+    # shellcheck disable=SC1091
+    source "$ROOT_DIR/.env"
+    set +a
+fi
+
+# Configuration (sourced from .env or environment)
+PROJECT_ID="${PROJECT_ID:?Set PROJECT_ID in .env or environment}"
+SERVICE_NAME="${SERVICE_NAME:-word-meaning-scouter}"
+REGION="${REGION:-us-central1}"
+GCP_LOCATION="${GCP_LOCATION:-global}"
+GEMINI_MODEL="${GEMINI_MODEL:-gemini-3.5-flash-lite}"
 
 # 1. Bot Protection (reCAPTCHA Enterprise v3 / Score-based)
-RECAPTCHA_SITE_KEY="${RECAPTCHA_SITE_KEY:-6LdywfAtAAAAALxJwSerq3XLO2Ms2rIY-XTiaTXa}"
+RECAPTCHA_SITE_KEY="${RECAPTCHA_SITE_KEY:?Set RECAPTCHA_SITE_KEY in .env or environment}"
 RECAPTCHA_SCORE_THRESHOLD="${RECAPTCHA_SCORE_THRESHOLD:-0.5}"
 
 # 2. Distributed Rate Limiting (Google Cloud Memorystore for Valkey / Redis)
-REDIS_URL="${REDIS_URL:-redis://10.128.0.4:6379/0}"
-GLOBAL_RATE_LIMIT="1000 per 5 minutes"
-PER_USER_RATE_LIMIT="10 per minute"
-MAX_BODY_BYTES="131072"
+REDIS_URL="${REDIS_URL:?Set REDIS_URL in .env or environment}"
+GLOBAL_RATE_LIMIT="${GLOBAL_RATE_LIMIT:-1000 per 5 minutes}"
+PER_USER_RATE_LIMIT="${PER_USER_RATE_LIMIT:-10 per minute}"
+MAX_BODY_BYTES="${MAX_BODY_BYTES:-131072}"
 
 # 3. Non-Blocking BigQuery Telemetry
-DATASET_ID="simple_demo_tracking"
-TABLE_ID="demo_usage"
-DEMO_NAME="$SERVICE_NAME"
+DATASET_ID="${BQ_DATASET:-simple_demo_tracking}"
+TABLE_ID="${BQ_TABLE:-demo_usage}"
+DEMO_NAME="${DEMO_NAME:-$SERVICE_NAME}"
 
-# Set to "false" in production to enforce Valkey/Redis rate limits & reCAPTCHA
-DEV_MODE="${DEV_MODE:-false}"
+# Enforce production mode on Cloud Run unless explicitly overridden
+DEV_MODE="${PROD_DEV_MODE:-false}"
 MAX_INSTANCES="${MAX_INSTANCES:-5}"
 
 echo "Building production frontend bundle..."
-"$(dirname "$0")/build_client.sh"
+"$ROOT_DIR/scripts/build_client.sh"
 
 echo "Deploying $SERVICE_NAME to Cloud Run in $PROJECT_ID..."
 
 gcloud run deploy "$SERVICE_NAME" \
-  --source . \
+  --source "$ROOT_DIR" \
   --region "$REGION" \
   --allow-unauthenticated \
   --project "$PROJECT_ID" \

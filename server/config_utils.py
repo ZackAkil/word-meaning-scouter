@@ -7,7 +7,7 @@ load_dotenv(override=False)
 
 logger = logging.getLogger(__name__)
 
-DEFAULT_PROJECT_ID = "zacks-sandbox"
+DEFAULT_PROJECT_ID = "your-gcp-project-id"
 
 
 def get_project_id() -> str:
