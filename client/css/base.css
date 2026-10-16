@@ -71,6 +71,11 @@ select {
     color: var(--color-ink) !important;
 }
 
+input::placeholder {
+    color: var(--color-oxblood) !important;
+    opacity: 0.4 !important;
+}
+
 input:not([type="radio"]):not([type="checkbox"]):focus,
 select:focus {
     border-color: var(--color-teal) !important;
@@ -153,7 +158,42 @@ button.secondary.outline:hover:not(:disabled),
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 0.65rem;
+}
+
+.theory-box {
+    margin-top: 1.5rem;
+    max-width: 580px;
+    padding: 0.9rem 1.15rem;
+    background-color: var(--color-paper);
+    border: 1.5px solid var(--color-oxblood);
+    border-left: 4px solid var(--color-teal);
+    text-align: left;
+}
+
+.theory-label {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--color-oxblood);
+    margin-bottom: 0.4rem;
+}
+
+.theory-text {
+    margin: 0;
+    font-size: 0.88rem;
+    line-height: 1.55;
+    color: var(--color-ink);
+}
+
+.upload-notes {
+    margin-top: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    line-height: 1.6;
 }
 
 .upload-privacy-note {

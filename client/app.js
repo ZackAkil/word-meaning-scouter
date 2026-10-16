@@ -28,6 +28,7 @@ document.addEventListener('DOMContentLoaded', () => {
         bookTitle: document.getElementById('book-title'),
         modeRadios: document.querySelectorAll('input[name="selection-mode"]'),
         tocSelect: document.getElementById('toc-select'),
+        pageRangeLabel: document.getElementById('page-range-label'),
         pageStart: document.getElementById('page-start'),
         pageEnd: document.getElementById('page-end'),
         wordCount: document.getElementById('word-count'),
@@ -71,10 +72,16 @@ document.addEventListener('DOMContentLoaded', () => {
         },
         onLocationsReady: (totalPages) => {
             if (totalPages > 0) {
-                elements.pageStart.max = totalPages;
-                elements.pageEnd.max = totalPages;
+                elements.pageStart.removeAttribute('max');
+                elements.pageEnd.removeAttribute('max');
                 elements.pageStart.placeholder = '1';
                 elements.pageEnd.placeholder = `${totalPages}`;
+                if (!elements.pageStart.value) {
+                    elements.pageStart.value = '1';
+                }
+                if (elements.pageRangeLabel) {
+                    elements.pageRangeLabel.textContent = `Page Range (1–${totalPages})`;
+                }
             }
         },
         onRelocated: updatePaginationUI
@@ -82,13 +89,24 @@ document.addEventListener('DOMContentLoaded', () => {
 
     initEventListeners();
 
+    function selectModeRadio(modeValue) {
+        const radio = document.querySelector(`input[name="selection-mode"][value="${modeValue}"]`);
+        if (radio && !radio.checked) {
+            radio.checked = true;
+        }
+    }
+
     function initEventListeners() {
         if (elements.startFileInput) elements.startFileInput.addEventListener('change', handleFileUpload);
         if (elements.changeFileInput) elements.changeFileInput.addEventListener('change', handleFileUpload);
 
         elements.prevBtn.addEventListener('click', () => reader.prev());
         elements.nextBtn.addEventListener('click', () => reader.next());
-        elements.tocSelect.addEventListener('change', handleChapterSelect);
+        elements.tocSelect.addEventListener('focus', () => selectModeRadio('chapter'));
+        elements.tocSelect.addEventListener('change', (e) => {
+            selectModeRadio('chapter');
+            handleChapterSelect(e);
+        });
         elements.extractBtn.addEventListener('click', handleExtractVocabulary);
         elements.wordDetail.closeBtn.addEventListener('click', () => hideWordDetail(elements.wordDetail));
         elements.wordDetail.dialog?.addEventListener('close', () => {
@@ -122,6 +140,11 @@ document.addEventListener('DOMContentLoaded', () => {
             radio.addEventListener('change', updateSelectionModeUI);
         });
 
+        [elements.pageStart, elements.pageEnd].forEach((input) => {
+            input.addEventListener('focus', () => selectModeRadio('page-range'));
+            input.addEventListener('input', () => selectModeRadio('page-range'));
+        });
+
         elements.pageStart.addEventListener('change', () => {
             const pageNum = parseInt(elements.pageStart.value, 10);
             if (pageNum) reader.displayPage(pageNum);
@@ -142,6 +165,12 @@ document.addEventListener('DOMContentLoaded', () => {
         elements.startView.classList.add('hidden');
         elements.mainWorkspace.classList.remove('hidden');
         elements.vocabSection.classList.add('hidden');
+        elements.pageStart.value = '1';
+        elements.pageEnd.value = '';
+        if (elements.pageRangeLabel) {
+            elements.pageRangeLabel.textContent = 'Page Range';
+        }
+        elements.pageInfo.textContent = 'Calculating book pages...';
 
         const fileReader = new FileReader();
         fileReader.onload = (event) => {
@@ -160,23 +189,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function updateSelectionModeUI() {
         const bookLoaded = !!reader.getBook();
-        if (!bookLoaded) {
-            elements.tocSelect.disabled = true;
-            elements.pageStart.disabled = true;
-            elements.pageEnd.disabled = true;
-            return;
-        }
-
-        const selectedMode = document.querySelector('input[name="selection-mode"]:checked')?.value || 'chapter';
-        if (selectedMode === 'chapter') {
-            elements.tocSelect.disabled = false;
-            elements.pageStart.disabled = true;
-            elements.pageEnd.disabled = true;
-        } else {
-            elements.tocSelect.disabled = true;
-            elements.pageStart.disabled = false;
-            elements.pageEnd.disabled = false;
-        }
+        elements.tocSelect.disabled = !bookLoaded;
+        elements.pageStart.disabled = !bookLoaded;
+        elements.pageEnd.disabled = !bookLoaded;
     }
 
     function populateToc(toc) {
@@ -217,13 +232,22 @@ document.addEventListener('DOMContentLoaded', () => {
         elements.nextBtn.disabled = !!location.atEnd;
 
         const book = reader.getBook();
-        if (location.start.displayed?.page && location.start.displayed?.total) {
-            elements.pageInfo.textContent = `Page ${location.start.displayed.page} of ${location.start.displayed.total}`;
-        } else if (book?.locations?.length()) {
-            const current = book.locations.locationFromCfi(location.start.cfi) + 1;
-            elements.pageInfo.textContent = `Page ${current} of ${book.locations.length()}`;
+        const totalBookPages = book?.locations?.length() || 0;
+        const chPage = location.start.displayed?.page;
+        const chTotal = location.start.displayed?.total;
+
+        if (totalBookPages > 0) {
+            const locIndex = book.locations.locationFromCfi(location.start.cfi);
+            const currentBookPage = Math.max(1, Math.min(totalBookPages, (locIndex >= 0 ? locIndex : 0) + 1));
+            if (chPage && chTotal) {
+                elements.pageInfo.textContent = `Page ${currentBookPage} of ${totalBookPages} (Ch. Page ${chPage} of ${chTotal})`;
+            } else {
+                elements.pageInfo.textContent = `Page ${currentBookPage} of ${totalBookPages}`;
+            }
+        } else if (chPage && chTotal) {
+            elements.pageInfo.textContent = `Ch. Page ${chPage} of ${chTotal} (Calculating total pages...)`;
         } else {
-            elements.pageInfo.textContent = '';
+            elements.pageInfo.textContent = 'Calculating total pages...';
         }
     }
 
@@ -247,15 +271,20 @@ document.addEventListener('DOMContentLoaded', () => {
         const targetCount = parseInt(elements.wordCount?.value, 10) || 16;
         const includeCrux = !!elements.includeCrux?.checked;
         const mode = document.querySelector('input[name="selection-mode"]:checked')?.value || 'chapter';
-        const startPage = parseInt(elements.pageStart.value, 10);
-        const endPage = parseInt(elements.pageEnd.value, 10);
+        let startPage = parseInt(elements.pageStart.value, 10);
+        let endPage = parseInt(elements.pageEnd.value, 10);
 
         let scope = '';
         if (mode === 'page-range') {
-            if (!startPage || !endPage) {
-                elements.vocabSubtitle.textContent = 'Please enter both Start and End page numbers.';
+            if (!startPage && endPage > 0) {
+                startPage = 1;
+                elements.pageStart.value = '1';
+            }
+            if (!startPage || !endPage || startPage < 1 || endPage < 1 || startPage > endPage) {
+                elements.vocabSubtitle.textContent = 'Invalid page range.';
                 elements.vocabSection.classList.remove('hidden');
-                elements.vocabError.textContent = 'Please enter a valid page range (e.g. 1 to 20).';
+                elements.vocabLoading.classList.add('hidden');
+                elements.vocabError.textContent = 'Please enter a valid Start and End page number (Start ≤ End).';
                 elements.vocabError.classList.remove('hidden');
                 if (elements.printSheetBtn) elements.printSheetBtn.disabled = true;
                 return;
@@ -301,6 +330,10 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         try {
+            if (mode === 'page-range') {
+                await reader.ensureLocations();
+            }
+
             const text = await extractSelectionText({
                 book,
                 mode,

@@ -6,7 +6,7 @@ PROJECT_ID="starter-apps-base"
 SERVICE_NAME="word-meaning-scouter"
 REGION="us-central1"
 GCP_LOCATION="global"
-GEMINI_MODEL="gemini-3.8-flash"
+GEMINI_MODEL="gemini-3.5-flash-lite"
 
 # 1. Bot Protection (reCAPTCHA Enterprise v3 / Score-based)
 RECAPTCHA_SITE_KEY="${RECAPTCHA_SITE_KEY:-6LdywfAtAAAAALxJwSerq3XLO2Ms2rIY-XTiaTXa}"

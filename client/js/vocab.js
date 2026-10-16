@@ -5,12 +5,19 @@
 
 import { postProtected } from '../api_client.js';
 
-const MAX_TEXT_CHARS = 60000;
+export const MAX_TEXT_CHARS = 60000;
 
 export async function fetchVocabulary({ text, targetCount = 16, includeCrux = false }) {
-    const truncatedText = text.slice(0, MAX_TEXT_CHARS);
+    console.log(`[Word Meaning Scouter] Analysing text section (${text.length} chars):\n`, text);
+
+    if (text.length > MAX_TEXT_CHARS) {
+        throw new Error(
+            `Selected text is ${text.length.toLocaleString()} characters, which exceeds the maximum limit of ${MAX_TEXT_CHARS.toLocaleString()} characters. Please select a smaller page range.`
+        );
+    }
+
     const data = await postProtected('/api/extract-vocabulary', {
-        text: truncatedText,
+        text,
         target_count: targetCount,
         include_crux: includeCrux
     });

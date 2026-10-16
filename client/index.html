@@ -24,7 +24,17 @@
             <div class="upload-action-group">
                 <label for="start-file-input" role="button" class="contrast">Upload EPUB</label>
                 <input type="file" id="start-file-input" accept=".epub" hidden>
-                <small class="upload-privacy-note muted">This app does not save or store anything you upload.</small>
+
+                <div class="theory-box">
+                    <div class="theory-label">Why Pre-Scout Vocabulary? (Cognitive Load Theory)</div>
+                    <p class="theory-text">
+                        Encountering unfamiliar words mid-sentence forces your working memory to decode vocabulary and track the narrative at the same time—a dual task that easily triggers <strong>cognitive overload</strong> and breaks reading flow. By segmenting word learning <em>before</em> you read a chapter, you manage and optimise <strong>intrinsic cognitive load</strong>: you master the tricky vocabulary first, freeing your full mental capacity to comprehend and enjoy the story itself.
+                    </p>
+                </div>
+
+                <div class="upload-notes">
+                    <small class="upload-privacy-note muted">This app does not save or store anything you upload.<br> This application is for demo purposes only.<br>This is not an official product.<br>May produce inaccurate, unexpected, or offensive results.</small>
+                </div>
             </div>
         </div>
 
@@ -71,7 +81,7 @@
                     <div>
                         <label class="radio-label">
                             <input type="radio" name="selection-mode" value="page-range">
-                            Page Range
+                            <span id="page-range-label">Page Range</span>
                         </label>
                         <div class="range-row">
                             <input type="number" id="page-start" placeholder="Start" min="1" disabled>
@@ -98,7 +108,6 @@
                         <button id="extract-btn" class="contrast" disabled>Extract</button>
                     </div>
                 </div>
-                <small class="ai-disclaimer-note muted">Note: AI can make mistakes.</small>
             </article>
 
             <!-- Extracted Vocabulary Section -->
@@ -119,6 +128,7 @@
 
                 <div id="crux-box" class="crux-box hidden">
                     <div class="crux-label">Crux Paragraph</div>
+                    <small class="crux-note muted">This spoiler-free passage is generated using all of the extracted vocabulary words and does not exist in the book.</small>
                     <p id="crux-text" class="crux-text"></p>
                 </div>
 

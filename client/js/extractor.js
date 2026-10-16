@@ -1,49 +1,133 @@
 /**
  * Text Extractor
- * Extracts readable text from EPUB sections (by page range or chapter).
+ * Extracts readable text from EPUB sections across the whole book (by page range or chapter).
  */
 
-export async function extractTextFromSpineHref(book, href) {
-    if (!book || !href) return '';
+import { CHARS_PER_PAGE } from './reader.js';
+
+export async function extractTextFromSpineSection(book, section) {
+    if (!book || !section) return '';
     try {
-        const section = book.spine.get(href);
-        if (section) {
-            const content = await section.load(book.load.bind(book));
-            if (typeof content === 'string') {
-                const doc = new DOMParser().parseFromString(content, 'text/html');
-                return doc.body?.innerText || doc.body?.textContent || content;
-            }
-            return content?.body?.innerText || content?.body?.textContent || '';
+        const content = await section.load(book.load.bind(book));
+        if (typeof content === 'string') {
+            const doc = new DOMParser().parseFromString(content, 'text/html');
+            return (doc.body?.innerText || doc.body?.textContent || content).trim();
         }
+        const bodyEl =
+            content?.body ||
+            content?.querySelector?.('body') ||
+            section?.document?.body ||
+            section?.document?.querySelector?.('body') ||
+            content;
+        return (bodyEl?.innerText || bodyEl?.textContent || '').trim();
     } catch (err) {
         console.warn('Spine extraction notice:', err);
     }
     return '';
 }
 
-export async function extractSelectionText({ book, mode = 'chapter', startPage, endPage, chapterHref, fallbackIframeSelector = '#viewer iframe' }) {
+export async function extractTextFromSpineHref(book, href) {
+    if (!book || !href) return '';
+    const cleanHref = href.split('#')[0];
+    const section = book.spine.get(href) || book.spine.get(cleanHref);
+    return extractTextFromSpineSection(book, section);
+}
+
+export async function extractSelectionText({
+    book,
+    mode = 'chapter',
+    startPage,
+    endPage,
+    chapterHref,
+    fallbackIframeSelector = '#viewer iframe'
+}) {
     if (!book) return '';
 
-    // 1. Extract by Page Range
-    if (mode === 'page-range' && startPage && endPage && book.locations?.length()) {
-        let combinedText = '';
-        const visitedHrefs = new Set();
-        const minPage = Math.max(1, startPage);
-        const maxPage = Math.min(endPage, book.locations.length());
-
-        for (let p = minPage; p <= maxPage; p++) {
-            const cfi = book.locations.cfiFromLocation(p - 1);
-            if (cfi) {
-                const item = book.spine.get(cfi);
-                if (item && !visitedHrefs.has(item.href)) {
-                    visitedHrefs.add(item.href);
-                    const text = await extractTextFromSpineHref(book, item.href);
-                    combinedText += `\n${text}`;
-                }
-            }
+    // 1. Extract by Whole-Book Page Range
+    if (mode === 'page-range' && startPage && endPage) {
+        if (!book.locations?.length()) {
+            await book.locations.generate(CHARS_PER_PAGE);
         }
 
-        if (combinedText.trim()) return combinedText;
+        const totalPages = book.locations?.length() || 0;
+        const spineItems = book.spine?.spineItems || [];
+
+        if (totalPages > 0) {
+            const minPage = Math.max(1, Math.min(startPage, endPage));
+            const maxPage = Math.min(totalPages, Math.max(startPage, endPage));
+
+            // Map every book page (1..totalPages) to its spine section
+            const sectionPageBounds = new Map();
+            for (let p = 1; p <= totalPages; p++) {
+                const cfi = book.locations.cfiFromLocation(p - 1);
+                if (!cfi) continue;
+
+                const section =
+                    book.spine.get(cfi) ||
+                    spineItems.find((s) => s.cfiBase && cfi.includes(s.cfiBase));
+                if (!section) continue;
+
+                const key = section.index ?? section.href;
+                const bounds = sectionPageBounds.get(key);
+                if (!bounds) {
+                    sectionPageBounds.set(key, {
+                        section,
+                        firstPage: p,
+                        lastPage: p
+                    });
+                } else {
+                    bounds.lastPage = p;
+                }
+            }
+
+            const chunks = [];
+            for (const { section, firstPage, lastPage } of sectionPageBounds.values()) {
+                if (lastPage < minPage || firstPage > maxPage) {
+                    continue;
+                }
+
+                const fullSectionText = await extractTextFromSpineSection(book, section);
+                if (!fullSectionText) continue;
+
+                const sectionTotalPages = Math.max(1, lastPage - firstPage + 1);
+                const overlapStartPage = Math.max(firstPage, minPage);
+                const overlapEndPage = Math.min(lastPage, maxPage);
+
+                const startRatio = (overlapStartPage - firstPage) / sectionTotalPages;
+                const endRatio = (overlapEndPage - firstPage + 1) / sectionTotalPages;
+
+                const sliceStart = Math.floor(startRatio * fullSectionText.length);
+                const sliceEnd = Math.ceil(endRatio * fullSectionText.length);
+                const sliced = fullSectionText.slice(sliceStart, sliceEnd).trim();
+
+                if (sliced) {
+                    console.log(
+                        `[Word Meaning Scouter] Extracted spine section "${section.href}" (pages ${overlapStartPage}–${overlapEndPage} of section pages ${firstPage}–${lastPage}, ${sliced.length} chars)`
+                    );
+                    chunks.push(sliced);
+                }
+            }
+
+            const combinedText = chunks.join('\n\n').trim();
+            if (combinedText) return combinedText;
+        }
+
+        // Fallback if locations-to-spine mapping did not resolve: slice across all spine sections by CHARS_PER_PAGE
+        if (spineItems.length > 0) {
+            const minPage = Math.max(1, Math.min(startPage, endPage));
+            const maxPage = Math.max(startPage, endPage);
+            const startChar = (minPage - 1) * CHARS_PER_PAGE;
+            const endChar = maxPage * CHARS_PER_PAGE;
+
+            const allSectionsText = [];
+            for (const section of spineItems) {
+                const sectionText = await extractTextFromSpineSection(book, section);
+                if (sectionText) allSectionsText.push(sectionText);
+            }
+            const fullBookText = allSectionsText.join('\n\n');
+            const slicedBookText = fullBookText.slice(startChar, endChar).trim();
+            if (slicedBookText) return slicedBookText;
+        }
     }
 
     // 2. Extract by Chapter
@@ -54,9 +138,9 @@ export async function extractSelectionText({ book, mode = 'chapter', startPage, 
 
     // 3. Fallback: First spine section
     if (book.spine?.length > 0) {
-        const firstHref = book.spine.get(0)?.href;
-        if (firstHref) {
-            const text = await extractTextFromSpineHref(book, firstHref);
+        const firstSection = book.spine.get(0);
+        if (firstSection) {
+            const text = await extractTextFromSpineSection(book, firstSection);
             if (text.trim()) return text;
         }
     }

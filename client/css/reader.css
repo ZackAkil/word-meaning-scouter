@@ -106,11 +106,3 @@
     width: 100%;
     margin-bottom: 0;
 }
-
-.ai-disclaimer-note {
-    display: block;
-    margin-top: 0.65rem;
-    font-family: var(--font-mono);
-    font-size: 0.75rem;
-    text-align: right;
-}
