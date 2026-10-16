@@ -61,16 +61,16 @@ flowchart LR
 ### Why Cloud Memorystore (Valkey)?
 - **State Across Stateless Containers:** In-memory rate limiters fail as soon as Cloud Run scales beyond a single container instance.
 - **Dual-Tier Rate Limiting:** Memorystore for Valkey provides sub-millisecond shared state across all Cloud Run instances, enforcing:
-  1. **Per-User Limit (`5/minute`):** Keyed by a cookieless, one-way SHA-256 IP fingerprint (`server/fingerprint.py`) with a 60-second TTL.
-  2. **Global Circuit Breaker (`100/minute`):** Caps total cluster-wide Gemini calls per minute to guarantee predictable max spend.
+  1. **Per-User Limit (`10/minute`):** Keyed by a cookieless, one-way SHA-256 IP fingerprint (`server/fingerprint.py`) with a 60-second TTL.
+  2. **Global Circuit Breaker (`1000/5 minutes`):** Caps total cluster-wide Gemini calls to guarantee predictable max spend.
 
 ### Why reCAPTCHA Enterprise?
 - **Zero-Login Bot Defense:** Requiring sign-up limits app adoption, but unguarded LLM endpoints attract automated scrapers.
 - **Invisible, Score-Based Verification:** Google Cloud reCAPTCHA Enterprise evaluates each extraction request behind the scenes (`server/recaptcha_validator.py`) and rejects low-score automated traffic *before* any Gemini platform tokens are consumed.
 
 ### Why BigQuery?
-- **Zero-Ops Serverless Telemetry:** Instead of provisioning a transactional database just to count usage, `server/simple_tracker.py` streams anonymous event rows (`page_view`, `extract_vocabulary_success`, `rate_limit_exceeded`, `recaptcha_failed`) directly to BigQuery.
-- **Non-Blocking Execution:** Telemetry writes run in background threads so analytics never add latency to user requests.
+- **Zero-Ops Serverless Telemetry:** Instead of provisioning a transactional database just to count usage, `server/simple_tracker.py` streams anonymous event rows (`page_view`, `extract_vocabulary`, `rate_limit_exceeded`, `recaptcha_failed`) directly to BigQuery.
+- **Post-Response `BackgroundTasks` Execution:** Telemetry writes are attached to the FastAPI/Starlette `Response` as `BackgroundTasks`—so the browser receives the HTTP response immediately while Cloud Run keeps request CPU allocated until the BigQuery insert finishes.
 
 ---
 
@@ -110,24 +110,34 @@ word-meaning-scouter/
 ├── server/
 │   ├── main.py                  # FastAPI entrypoint & POST /api/extract-vocabulary
 │   ├── gemini_service.py        # Gemini platform extraction & structured output schema
-│   ├── toolkit.py               # Rate limiting, reCAPTCHA, CSP, and static file mounting
+│   ├── toolkit.py               # Rate limiting, reCAPTCHA, CSP, BackgroundTasks & static mount
 │   ├── fingerprint.py           # Cookieless SHA-256 client IP fingerprinting
 │   ├── recaptcha_validator.py   # reCAPTCHA Enterprise token validator
-│   ├── simple_tracker.py        # Non-blocking BigQuery event logger
+│   ├── simple_tracker.py        # Response BackgroundTask BigQuery event logger
 │   └── config_utils.py          # GCP Project ID & model configuration
 ├── client/
 │   ├── index.html               # Main UI view & metadata
 │   ├── favicon.svg              # Utilitarian SVG favicon
 │   ├── app.js                   # Frontend application controller
-│   ├── api_client.js            # reCAPTCHA token & protected fetch helper
-│   ├── js/                      # Modular EPUB reader, text extractor, and vocabulary UI
-│   └── css/                     # Utilitarian component stylesheets
-└── scripts/
-    ├── dev.sh                   # Local development server (DEV_MODE=true)
-    ├── build_client.sh          # Bundles & minifies frontend JS/CSS into client_dist/
-    ├── check_gcp.sh             # Pre-flight check for GCP APIs, Valkey, reCAPTCHA & BigQuery
-    ├── deploy.sh                # Cloud Run production deployment script
-    └── map_domain.sh            # Custom domain mapping script
+│   ├── api_client.js            # X-Recaptcha-Token & protected fetch helper
+│   ├── js/
+│   │   ├── reader.js            # epub.js wrapper & whole-book pagination
+│   │   ├── extractor.js         # Whole-book page-range & chapter text extractor
+│   │   └── vocab.js             # Vocabulary grid, Crux Paragraph & printable sheet renderer
+│   └── css/
+│       ├── base.css             # Utilitarian theme, start view & header styles
+│       ├── reader.css           # EPUB reader & extraction toolbar styles
+│       ├── vocab.css            # Vocabulary grid, Crux Paragraph & dialog styles
+│       └── print.css            # Foldable & duplex printable flashcard styles
+├── scripts/
+│   ├── dev.sh                   # Local development server (DEV_MODE=true)
+│   ├── build_client.sh          # Bundles & minifies frontend JS/CSS into client_dist/
+│   ├── check_gcp.sh             # Pre-flight check for GCP APIs, Valkey, reCAPTCHA & BigQuery
+│   ├── deploy.sh                # Builds client_dist/ & deploys to Cloud Run
+│   └── map_domain.sh            # Custom domain mapping script
+├── .env.example                 # Template for local/production environment variables
+├── Procfile                     # Cloud Run buildpack entrypoint (uvicorn)
+└── requirements.txt             # Python backend dependencies
 ```
 
 ---
@@ -144,15 +154,20 @@ Then open `http://localhost:8080`.
 
 ## Production Deployment (Cloud Run)
 
-1. **Verify GCP Readiness:**
+1. **Configure Environment (`.env`):**
+   ```bash
+   cp .env.example .env
+   # Edit .env with your PROJECT_ID, RECAPTCHA_SITE_KEY, and REDIS_URL
+   ```
+2. **Verify GCP Readiness:**
    ```bash
    ./scripts/check_gcp.sh
    ```
-2. **Deploy to Cloud Run:**
+3. **Build & Deploy to Cloud Run:**
    ```bash
    ./scripts/deploy.sh
    ```
-3. **Map Custom Domain (if needed):**
+4. **Map Custom Domain (if needed):**
    ```bash
    ./scripts/map_domain.sh
    ```

@@ -211,6 +211,23 @@ button.secondary.outline:hover:not(:disabled),
     margin-bottom: 0;
 }
 
+.start-subtitle-group {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.45rem;
+    margin: -0.25rem 0 0.25rem 0;
+}
+
+.start-subtitle-group p {
+    margin: 0;
+    line-height: 1.4;
+}
+
+.start-powered-by {
+    font-size: 0.9rem;
+}
+
 .upload-action-group {
     display: flex;
     flex-direction: column;
